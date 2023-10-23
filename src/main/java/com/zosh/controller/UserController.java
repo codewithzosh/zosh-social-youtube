@@ -11,10 +11,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.zosh.models.User;
 import com.zosh.repository.UserRepository;
+import com.zosh.service.UserService;
 
 @RestController
 public class UserController {
@@ -22,17 +24,13 @@ public class UserController {
 	@Autowired
 	UserRepository userRepository;
 	
+	@Autowired
+	UserService userService;
+	
 	@PostMapping("/users")
 	public User createUser(@RequestBody User user) {
 		
-		User newUser=new User();
-		newUser.setEmail(user.getEmail());
-		newUser.setFirstName(user.getFirstName());
-		newUser.setLastName(user.getLastName());
-		newUser.setPassword(user.getPassword());
-		newUser.setId(user.getId());
-		
-		User savedUser=userRepository.save(newUser);
+		User savedUser=userService.registerUser(user);
 		
 		return savedUser;
 	}
@@ -52,56 +50,35 @@ public class UserController {
 	@GetMapping("/users/{userId}")
 	public User getUserById(@PathVariable("userId") Integer id) throws Exception {
 		
-		Optional<User> user = userRepository.findById(id);
+		User user = userService.findUserById(id);
+		return user;
 		
-		if(user.isPresent()) {
-			return user.get();
-		}
-		
-		throw new Exception("user not exist with userid " + id);
 	}
-	
-
 	
 	@PutMapping("/users/{userId}")
 	public User updateUser(@RequestBody User user, @PathVariable Integer userId) throws Exception {
 		
-		Optional<User> user1 = userRepository.findById(userId);
+		User updatedUser =userService.updateUser(user, userId);
 		
-		if(user1.isEmpty()) {
-			throw new Exception("user not exit with id "+userId);
-		}
-		
-         User oldUser= user1.get();
-         
-         if(user.getFirstName()!=null) {
-        	 oldUser.setFirstName(user.getFirstName());
-         }
-         if(user.getLastName()!=null) {
-        	 oldUser.setLastName(user.getLastName());
-         }
-         if(user.getEmail()!=null) {
-        	 oldUser.setEmail(user.getEmail());
-         }
-         
-         User updatedUser=userRepository.save(oldUser);
-		
-         return updatedUser;
-         
+		return updatedUser;
+		 
 	}
 	
-	@DeleteMapping("users/{userId}")
-	public String deleteUser(@PathVariable("userId") Integer userId) throws Exception {
-
-		Optional<User> user = userRepository.findById(userId);
+	@PutMapping("/users/follow/{userId1}/{userId2}")
+	public User followUserHandler(@PathVariable Integer userId1, @PathVariable Integer userId2) throws Exception {
 		
-		if(user.isEmpty()) {
-			throw new Exception("user not exit with id "+userId);
-		}
-		
-		userRepository.delete(user.get());
-		
-		return "user deleted successfully with id "+userId;
+		User user=userService.followUser(userId1, userId2);
+		return user;
 	}
+	
+	@GetMapping("/users/search")
+	public List<User> searchUser(@RequestParam("query") String query){
+		
+		List<User> users=userService.searchUser(query);
+		
+		return users;
+	}
+	
+	
 
 }
