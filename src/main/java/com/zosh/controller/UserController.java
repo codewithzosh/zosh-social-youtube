@@ -2,6 +2,7 @@ package com.zosh.controller;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -38,55 +39,67 @@ public class UserController {
 	
 	
 	
-	
-	
-	
 	@GetMapping("/users")
 	public List<User> getUsers() {
 		
-		List<User> users=new ArrayList<>();
-		
-		User user1=new User(1,"code","zosh","codewithzosh@gmail.com","12345");
-		User user2=new User(2,"raam","arora","raam@gmail.com","12345");
-		
-		users.add(user1);
-		users.add(user2);
+		List<User> users=userRepository.findAll();
 		
 		return users;
+		
 	}
 	
 	
 	@GetMapping("/users/{userId}")
-	public User getUserById(@PathVariable("userId") Integer id) {
+	public User getUserById(@PathVariable("userId") Integer id) throws Exception {
 		
-		User user1=new User(1,"code","zosh","codewithzosh@gmail.com","12345");
-		user1.setId(id);
+		Optional<User> user = userRepository.findById(id);
 		
-		return user1;
+		if(user.isPresent()) {
+			return user.get();
+		}
+		
+		throw new Exception("user not exist with userid " + id);
 	}
 	
 
 	
-	@PutMapping("/users")
-	public User updateUser(@RequestBody User user) {
+	@PutMapping("/users/{userId}")
+	public User updateUser(@RequestBody User user, @PathVariable Integer userId) throws Exception {
 		
-		User user1=new User(1,"code","zosh","codewithzosh@gmail.com","12345");
+		Optional<User> user1 = userRepository.findById(userId);
 		
-		if(user.getFirstName()!=null) {
-			user1.setFirstName(user.getFirstName());
-		}
-		if(user.getLastName()!=null) {
-			user1.setLastName(user.getLastName());
-		}
-		if(user.getEmail()!=null) {
-			user1.setEmail(user.getEmail());
+		if(user1.isEmpty()) {
+			throw new Exception("user not exit with id "+userId);
 		}
 		
-		return user1;
+         User oldUser= user1.get();
+         
+         if(user.getFirstName()!=null) {
+        	 oldUser.setFirstName(user.getFirstName());
+         }
+         if(user.getLastName()!=null) {
+        	 oldUser.setLastName(user.getLastName());
+         }
+         if(user.getEmail()!=null) {
+        	 oldUser.setEmail(user.getEmail());
+         }
+         
+         User updatedUser=userRepository.save(oldUser);
+		
+         return updatedUser;
+         
 	}
 	
 	@DeleteMapping("users/{userId}")
-	public String deleteUser(@PathVariable("userId") Integer userId) {
+	public String deleteUser(@PathVariable("userId") Integer userId) throws Exception {
+
+		Optional<User> user = userRepository.findById(userId);
+		
+		if(user.isEmpty()) {
+			throw new Exception("user not exit with id "+userId);
+		}
+		
+		userRepository.delete(user.get());
 		
 		return "user deleted successfully with id "+userId;
 	}
